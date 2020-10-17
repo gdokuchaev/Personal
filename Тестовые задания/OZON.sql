@@ -1,5 +1,6 @@
 -- Задание 1
 CREATE SCHEMA sps
+GO
 
 CREATE TABLE sps.[order] (
 	id int primary key, 
@@ -25,43 +26,23 @@ CREATE TABLE sps.company_info (
 	id int, 
 	[name] varchar(50))
 
-SELECT company_info.name, 	
-	(
-	SELECT Count(sps.[Order].clientid) AS unique_clients
-	FROM
-		sps.order_status INNER JOIN
-		sps.[Order] ON sps.[Order].id = sps.order_status.orderid INNER JOIN
-		sps.item_info ON sps.order_status.itemid = sps.item_info.id INNER JOIN
-		sps.company_info ON sps.item_info.companyid = sps.company_info.id
-	WHERE company_info.[name]='Well'
-	) AS unique_clients,
-	(
-	SELECT Sum(sps.order_status.quantity*sps.order_status.price-sps.order_status.discount) AS sales
-	FROM
-		sps.order_status INNER JOIN
-		sps.[Order] ON sps.[Order].id = sps.order_status.orderid INNER JOIN
-		sps.item_info ON sps.order_status.itemid = sps.item_info.id INNER JOIN
-		sps.company_info ON sps.item_info.companyid = sps.company_info.id
-	WHERE company_info.[name]='Well'
-	) AS sales,
-	(
-	SELECT Count(sps.[Order].clientid) AS unique_clients
-	FROM
-		sps.order_status INNER JOIN
-		sps.[Order] ON sps.[Order].id = sps.order_status.orderid INNER JOIN
-		sps.item_info ON sps.order_status.itemid = sps.item_info.id INNER JOIN
-		sps.company_info ON sps.item_info.companyid = sps.company_info.id
-	WHERE company_info.[name]='Well'
-	) AS avg_order
-FROM sps.company_info
-WHERE company_info.[name]='Well'
+SELECT
+	company_info.name,
+	count(distinct clientid) unique_clients,
+	sum(cost) sales,
+	sum(cost)/count(distinct orderid) avg_order
+FROM
+	sps.[order] orders JOIN (
+		SELECT *, price*quantity-discount cost
+		FROM sps.order_status 
+		) order_status ON id = orderid JOIN 
+	sps.item_info ON itemid = item_info.id JOIN
+	sps.company_info ON companyid = company_info.id
+WHERE company_info.name = 'Well'
+GROUP BY company_info.name
 GO
-
 
 -- Задание 2
-IF object_id ('sps.dates') IS NOT NULL DROP TABLE sps.dates
-GO
-
 CREATE TABLE sps.dates (
 	id int,
 	date date)
